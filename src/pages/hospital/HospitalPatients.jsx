@@ -3,20 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { 
-  Heart, 
-  Search, 
-  Calendar, 
-  MapPin, 
-  Phone,
-  AlertTriangle,
-  Clock,
-  User,
-  Bot,
-  Plus,
-  Trash2,
-  Edit
-} from 'lucide-react';
+import { Heart, Search, Calendar, MapPin, Phone, TriangleAlert as AlertTriangle, Clock, User, Bot, Plus, Trash2, CreditCard as Edit } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';

@@ -1,27 +1,7 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
-import {
-  LayoutDashboard,
-  Users,
-  Heart,
-  Siren,
-  Building2,
-  Route,
-  BarChart3,
-  Settings,
-  Menu,
-  X,
-  Droplets,
-  AlertTriangle,
-  LogOut,
-  Package,
-  FileText,
-  Activity,
-  Sun,
-  Moon,
-  UserCircle
-} from 'lucide-react';
+import { LayoutDashboard, Users, Heart, Siren, Building2, Route, ChartBar as BarChart3, Settings, Menu, X, Droplets, TriangleAlert as AlertTriangle, LogOut, Package, FileText, Activity, Sun, Moon, CircleUser as UserCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';

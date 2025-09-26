@@ -1,17 +1,7 @@
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { 
-  Activity, 
-  Calendar, 
-  Droplets,
-  Heart,
-  MapPin,
-  Clock,
-  Award,
-  TrendingUp,
-  CheckCircle
-} from 'lucide-react';
+import { Activity, Calendar, Droplets, Heart, MapPin, Clock, Award, TrendingUp, CircleCheck as CheckCircle } from 'lucide-react';
 import {
   LineChart,
   Line,

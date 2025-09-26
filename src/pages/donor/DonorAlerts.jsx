@@ -2,17 +2,7 @@ import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { 
-  Siren, 
-  MapPin, 
-  Clock, 
-  Droplets,
-  Phone,
-  CheckCircle,
-  XCircle,
-  Navigation,
-  AlertTriangle
-} from 'lucide-react';
+import { Siren, MapPin, Clock, Droplets, Phone, CircleCheck as CheckCircle, Circle as XCircle, Navigation, TriangleAlert as AlertTriangle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const DonorAlerts = () => {

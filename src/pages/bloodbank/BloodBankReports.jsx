@@ -1,15 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { 
-  BarChart3, 
-  TrendingUp, 
-  Download,
-  Calendar,
-  Droplets,
-  CheckCircle,
-  XCircle,
-  Clock
-} from 'lucide-react';
+import { ChartBar as BarChart3, TrendingUp, Download, Calendar, Droplets, CircleCheck as CheckCircle, Circle as XCircle, Clock } from 'lucide-react';
 import {
   BarChart,
   Bar,

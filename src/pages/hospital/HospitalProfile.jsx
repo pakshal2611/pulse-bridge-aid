@@ -4,17 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { 
-  Building2, 
-  Mail, 
-  Phone, 
-  MapPin, 
-  Save,
-  Edit,
-  Users,
-  Activity,
-  Calendar
-} from 'lucide-react';
+import { Building2, Mail, Phone, MapPin, Save, CreditCard as Edit, Users, Activity, Calendar } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 

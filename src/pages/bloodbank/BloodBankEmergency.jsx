@@ -2,16 +2,7 @@ import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { 
-  Siren, 
-  MapPin, 
-  Clock, 
-  Droplets,
-  Truck,
-  Phone,
-  CheckCircle,
-  AlertTriangle
-} from 'lucide-react';
+import { Siren, MapPin, Clock, Droplets, Truck, Phone, CircleCheck as CheckCircle, TriangleAlert as AlertTriangle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const BloodBankEmergency = () => {
