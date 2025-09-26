@@ -14,21 +14,13 @@ import {
   Menu,
   X,
   Droplets,
-  AlertTriangle
+  AlertTriangle,
+  LogOut,
+  Bot,
+  Truck
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-
-const sidebarItems = [
-  { name: 'Dashboard', href: '/', icon: LayoutDashboard },
-  { name: 'Donor Management', href: '/donors', icon: Users },
-  { name: 'Recipients/Patients', href: '/recipients', icon: Heart },
-  { name: 'AI Matching', href: '/ai-matching', icon: Brain },
-  { name: 'Emergency SOS', href: '/emergency', icon: Siren },
-  { name: 'Hospitals/Blood Banks', href: '/hospitals', icon: Building2 },
-  { name: 'Logistics/Routing', href: '/logistics', icon: Route },
-  { name: 'Reports/Analytics', href: '/reports', icon: BarChart3 },
-  { name: 'Settings/Admin', href: '/settings', icon: Settings },
-];
+import { useAuth } from '@/contexts/AuthContext';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -37,6 +29,45 @@ interface LayoutProps {
 export default function Layout({ children }: LayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const location = useLocation();
+  const { user, logout } = useAuth();
+
+  // Filter menu items based on user role
+  const getMenuItems = () => {
+    const baseItems = [
+      { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+    ];
+
+    if (user?.role === 'admin') {
+      return [
+        ...baseItems,
+        { name: 'Donor Management', href: '/donors', icon: Users },
+        { name: 'Recipients/Patients', href: '/recipients', icon: Heart },
+        { name: 'AI Matching', href: '/ai-matching', icon: Bot },
+        { name: 'Emergency SOS', href: '/emergency', icon: Siren },
+        { name: 'Hospitals/Blood Banks', href: '/hospitals', icon: Building2 },
+        { name: 'Logistics/Routing', href: '/logistics', icon: Truck },
+        { name: 'Reports/Analytics', href: '/reports', icon: BarChart3 },
+        { name: 'Settings/Admin', href: '/settings', icon: Settings },
+      ];
+    } else if (user?.role === 'doctor') {
+      return [
+        ...baseItems,
+        { name: 'Donor Management', href: '/donors', icon: Users },
+        { name: 'Recipients/Patients', href: '/recipients', icon: Heart },
+        { name: 'Emergency SOS', href: '/emergency', icon: Siren },
+        { name: 'AI Matching', href: '/ai-matching', icon: Bot },
+      ];
+    } else {
+      // Patient/Donor view
+      return [
+        ...baseItems,
+        { name: 'Emergency SOS', href: '/emergency', icon: Siren },
+        { name: 'Settings', href: '/settings', icon: Settings },
+      ];
+    }
+  };
+
+  const sidebarItems = getMenuItems();
 
   return (
     <div className="flex h-screen bg-gradient-to-br from-background to-muted">
@@ -58,9 +89,16 @@ export default function Layout({ children }: LayoutProps) {
           <div className="flex h-16 items-center justify-between px-6 border-b border-border">
             <div className="flex items-center space-x-2">
               <Droplets className="h-8 w-8 text-primary" />
-              <span className="text-xl font-bold bg-gradient-to-r from-primary to-primary-glow bg-clip-text text-transparent">
-                LifeLink
-              </span>
+              <div>
+                <span className="text-xl font-bold bg-gradient-to-r from-primary to-primary-glow bg-clip-text text-transparent">
+                  LifeLink
+                </span>
+                {user && (
+                  <p className="text-xs text-muted-foreground capitalize">
+                    {user.role} - {user.name}
+                  </p>
+                )}
+              </div>
             </div>
             <Button
               variant="ghost"
@@ -104,6 +142,18 @@ export default function Layout({ children }: LayoutProps) {
                 </div>
               </div>
             </div>
+          </div>
+
+          {/* Logout Button */}
+          <div className="p-4 border-t border-border">
+            <Button
+              onClick={logout}
+              variant="ghost"
+              className="w-full justify-start gap-3 text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-900/20"
+            >
+              <LogOut className="h-4 w-4" />
+              Logout
+            </Button>
           </div>
         </div>
       </div>
