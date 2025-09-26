@@ -2,41 +2,72 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
+/* Medical Donation Platform Design System */
 
 @layer base {
   :root {
     --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    --foreground: 215 25% 27%;
 
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 215 25% 27%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover-foreground: 215 25% 27%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    /* Medical Blue Primary */
+    --primary: 211 100% 40%;
+    --primary-foreground: 0 0% 100%;
+    --primary-glow: 211 100% 55%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    /* Clean Secondary */
+    --secondary: 210 40% 96%;
+    --secondary-foreground: 215 25% 27%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --muted: 210 40% 96%;
+    --muted-foreground: 215 16% 47%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --accent: 210 40% 96%;
+    --accent-foreground: 215 25% 27%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    /* Emergency Red */
+    --emergency: 0 84% 60%;
+    --emergency-foreground: 0 0% 100%;
+    --emergency-glow: 0 100% 70%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    /* Success Green */
+    --success: 159 100% 29%;
+    --success-foreground: 0 0% 100%;
+    --success-glow: 159 100% 40%;
 
-    --radius: 0.5rem;
+    /* Warning Orange */
+    --warning: 32 95% 44%;
+    --warning-foreground: 0 0% 100%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    --ring: 211 100% 40%;
+
+    --radius: 0.75rem;
+
+    /* Medical Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary-glow)));
+    --gradient-emergency: linear-gradient(135deg, hsl(var(--emergency)), hsl(var(--emergency-glow)));
+    --gradient-success: linear-gradient(135deg, hsl(var(--success)), hsl(var(--success-glow)));
+    --gradient-subtle: linear-gradient(180deg, hsl(var(--background)), hsl(var(--muted)));
+
+    /* Medical Shadows */
+    --shadow-medical: 0 4px 20px -4px hsl(var(--primary) / 0.1);
+    --shadow-emergency: 0 4px 20px -4px hsl(var(--emergency) / 0.2);
+    --shadow-success: 0 4px 20px -4px hsl(var(--success) / 0.2);
+    --shadow-elegant: 0 10px 30px -10px hsl(var(--foreground) / 0.1);
+
+    /* Animations */
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-spring: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 
     --sidebar-background: 0 0% 98%;
 
@@ -100,6 +131,40 @@ All colors MUST be HSL.
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-sans;
+  }
+}
+
+@layer components {
+  /* Medical Button Variants */
+  .btn-medical {
+    @apply bg-gradient-to-r from-primary to-primary-glow text-primary-foreground shadow-[var(--shadow-medical)] transition-[var(--transition-smooth)] hover:shadow-lg hover:scale-105;
+  }
+  
+  .btn-emergency {
+    @apply bg-gradient-to-r from-emergency to-emergency-glow text-emergency-foreground shadow-[var(--shadow-emergency)] transition-[var(--transition-smooth)] hover:shadow-lg hover:scale-105 animate-pulse;
+  }
+  
+  .btn-success {
+    @apply bg-gradient-to-r from-success to-success-glow text-success-foreground shadow-[var(--shadow-success)] transition-[var(--transition-smooth)] hover:shadow-lg hover:scale-105;
+  }
+
+  /* Medical Cards */
+  .card-medical {
+    @apply bg-card border border-border rounded-[var(--radius)] shadow-[var(--shadow-elegant)] transition-[var(--transition-smooth)] hover:shadow-lg;
+  }
+
+  .card-emergency {
+    @apply bg-card border-2 border-emergency/20 rounded-[var(--radius)] shadow-[var(--shadow-emergency)] bg-gradient-to-br from-emergency/5 to-transparent;
+  }
+
+  /* Stats Cards */
+  .stats-card {
+    @apply card-medical p-6 text-center transition-[var(--transition-spring)] hover:scale-105;
+  }
+
+  /* Navigation Active States */
+  .nav-active {
+    @apply bg-primary text-primary-foreground shadow-[var(--shadow-medical)];
   }
 }
