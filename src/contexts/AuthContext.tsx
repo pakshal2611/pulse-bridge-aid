@@ -5,6 +5,7 @@ interface User {
   name: string;
   email: string;
   role: 'admin' | 'doctor' | 'patient' | 'donor';
+  bloodType?: string;
 }
 
 interface AuthContextType {
@@ -35,7 +36,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         id: Date.now().toString(),
         name: email.split('@')[0],
         email,
-        role: role as User['role']
+        role: role as User['role'],
+        bloodType: role === 'donor' ? 'O+' : undefined // Default blood type for donors
       };
       setUser(userData);
       localStorage.setItem('lifelink_user', JSON.stringify(userData));
@@ -51,7 +53,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         id: Date.now().toString(),
         name,
         email,
-        role: role as User['role']
+        role: role as User['role'],
+        bloodType: role === 'donor' ? 'O+' : undefined // Default blood type for donors
       };
       setUser(userData);
       localStorage.setItem('lifelink_user', JSON.stringify(userData));

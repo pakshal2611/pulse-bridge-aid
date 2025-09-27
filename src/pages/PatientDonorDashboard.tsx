@@ -11,10 +11,14 @@ import {
   Clock,
   Activity,
   Droplet,
-  User
+  User,
+  MessageSquare,
+  Navigation
 } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { useAuth } from "@/contexts/AuthContext";
+import WhatsAppNotifications from "@/components/WhatsAppNotifications";
+import DonorMapRoute from "@/components/DonorMapRoute";
 
 const PatientDonorDashboard = () => {
   const { user } = useAuth();
@@ -239,32 +243,80 @@ const PatientDonorDashboard = () => {
         </Card>
       </div>
 
-      {/* Recent Activity */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Recent Activity</CardTitle>
-          <CardDescription>Your latest actions and updates</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {recentActivity.map((activity, index) => (
-              <div key={index} className="flex items-center gap-4 p-4 rounded-lg border">
-                <div className={`w-2 h-2 rounded-full ${
-                  activity.status === 'success' ? 'bg-green-500' : 
-                  activity.status === 'pending' ? 'bg-yellow-500' : 'bg-gray-500'
-                }`} />
-                <div className="flex-1">
-                  <p className="font-medium">{activity.action}</p>
-                  <p className="text-sm text-muted-foreground">{activity.date}</p>
-                </div>
-                <Badge variant={activity.status === 'success' ? 'default' : 'secondary'}>
-                  {activity.status}
-                </Badge>
+      {/* Donor-specific sections */}
+      {isDonor && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* WhatsApp Notifications */}
+          <WhatsAppNotifications />
+          
+          {/* Recent Activity */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Recent Activity</CardTitle>
+              <CardDescription>Your latest actions and updates</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {recentActivity.map((activity, index) => (
+                  <div key={index} className="flex items-center gap-4 p-4 rounded-lg border">
+                    <div className={`w-2 h-2 rounded-full ${
+                      activity.status === 'success' ? 'bg-green-500' : 
+                      activity.status === 'pending' ? 'bg-yellow-500' : 'bg-gray-500'
+                    }`} />
+                    <div className="flex-1">
+                      <p className="font-medium">{activity.action}</p>
+                      <p className="text-sm text-muted-foreground">{activity.date}</p>
+                    </div>
+                    <Badge variant={activity.status === 'success' ? 'default' : 'secondary'}>
+                      {activity.status}
+                    </Badge>
+                  </div>
+                ))}
               </div>
-            ))}
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Map Route Section for Donors */}
+      {isDonor && (
+        <div className="space-y-6">
+          <div className="flex items-center gap-3">
+            <Navigation className="h-6 w-6 text-primary" />
+            <h2 className="text-2xl font-semibold">Find Donation Centers</h2>
           </div>
-        </CardContent>
-      </Card>
+          <DonorMapRoute donorBloodType={user?.bloodType || 'O+'} />
+        </div>
+      )}
+
+      {/* Patient-specific Recent Activity */}
+      {!isDonor && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Recent Activity</CardTitle>
+            <CardDescription>Your latest actions and updates</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {recentActivity.map((activity, index) => (
+                <div key={index} className="flex items-center gap-4 p-4 rounded-lg border">
+                  <div className={`w-2 h-2 rounded-full ${
+                    activity.status === 'success' ? 'bg-green-500' : 
+                    activity.status === 'pending' ? 'bg-yellow-500' : 'bg-gray-500'
+                  }`} />
+                  <div className="flex-1">
+                    <p className="font-medium">{activity.action}</p>
+                    <p className="text-sm text-muted-foreground">{activity.date}</p>
+                  </div>
+                  <Badge variant={activity.status === 'success' ? 'default' : 'secondary'}>
+                    {activity.status}
+                  </Badge>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };

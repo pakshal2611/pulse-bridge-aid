@@ -17,7 +17,8 @@ import {
   AlertTriangle,
   LogOut,
   Bot,
-  Truck
+  Truck,
+  ArrowRightLeft
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
@@ -44,6 +45,7 @@ export default function Layout({ children }: LayoutProps) {
         { name: 'Recipients/Patients', href: '/recipients', icon: Heart },
         { name: 'AI Matching', href: '/ai-matching', icon: Bot },
         { name: 'Emergency SOS', href: '/emergency', icon: Siren },
+        { name: 'Hospital Network', href: '/hospital-connectivity', icon: ArrowRightLeft },
         { name: 'Hospitals/Blood Banks', href: '/hospitals', icon: Building2 },
         { name: 'Logistics/Routing', href: '/logistics', icon: Truck },
         { name: 'Reports/Analytics', href: '/reports', icon: BarChart3 },
@@ -56,6 +58,7 @@ export default function Layout({ children }: LayoutProps) {
         { name: 'Recipients/Patients', href: '/recipients', icon: Heart },
         { name: 'Emergency SOS', href: '/emergency', icon: Siren },
         { name: 'AI Matching', href: '/ai-matching', icon: Bot },
+        { name: 'Hospital Network', href: '/hospital-connectivity', icon: ArrowRightLeft },
       ];
     } else {
       // Patient/Donor view

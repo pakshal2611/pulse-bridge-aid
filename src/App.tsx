@@ -20,6 +20,7 @@ import Logistics from "./pages/Logistics";
 import Reports from "./pages/Reports";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
+import HospitalConnectivity from "./pages/HospitalConnectivity";
 
 const queryClient = new QueryClient();
 
@@ -116,6 +117,13 @@ const App = () => (
               <ProtectedRoute>
                 <Layout>
                   <Settings />
+                </Layout>
+              </ProtectedRoute>
+            } />
+            <Route path="/hospital-connectivity" element={
+              <ProtectedRoute allowedRoles={['admin', 'doctor']}>
+                <Layout>
+                  <HospitalConnectivity />
                 </Layout>
               </ProtectedRoute>
             } />

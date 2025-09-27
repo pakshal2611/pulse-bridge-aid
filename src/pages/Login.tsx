@@ -37,13 +37,13 @@ const Login = () => {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 via-background to-secondary/5">
       <div className="w-full max-w-md p-6">
         <div className="text-center mb-8">
-          <div className="flex items-center justify-center gap-2 mb-4">
-            <Heart className="h-8 w-8 text-primary fill-primary" />
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+          <div className="flex items-center justify-center gap-3 mb-4">
+            <Heart className="h-10 w-10 text-primary fill-primary" />
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
               LifeLink
             </h1>
           </div>
-          <p className="text-muted-foreground">
+          <p className="text-muted-foreground text-lg">
             Connecting lives, saving futures
           </p>
         </div>
