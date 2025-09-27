@@ -4,10 +4,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Users, Search, Phone, Mail, MapPin, Calendar, CircleCheck as CheckCircle, Circle as XCircle, Plus, Filter, Heart, Droplets } from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
+import { Users, Search, Phone, Mail, MapPin, Calendar, CircleCheck as CheckCircle, Circle as XCircle, Plus, Filter, Heart, Droplets, MessageSquare, Eye, Edit, Save, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { hospitalAPI, whatsappAPI } from '@/services/api';
 
 const HospitalDonors = () => {
   const [donors, setDonors] = useState([
@@ -52,6 +54,12 @@ const HospitalDonors = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState('all');
   const [showAddDonor, setShowAddDonor] = useState(false);
+  const [showContactDialog, setShowContactDialog] = useState(false);
+  const [showDetailsDialog, setShowDetailsDialog] = useState(false);
+  const [selectedDonor, setSelectedDonor] = useState(null);
+  const [donorDetails, setDonorDetails] = useState(null);
+  const [contactMessage, setContactMessage] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
   const [newDonor, setNewDonor] = useState({
@@ -99,6 +107,62 @@ const HospitalDonors = () => {
       title: "Success",
       description: "Donor added successfully",
     });
+  };
+
+  const handleContactDonor = async (donor) => {
+    setSelectedDonor(donor);
+    setShowContactDialog(true);
+  };
+
+  const handleViewDetails = async (donor) => {
+    setIsLoading(true);
+    try {
+      const details = await hospitalAPI.getDonorDetails(donor.id);
+      setDonorDetails(details);
+      setSelectedDonor(donor);
+      setShowDetailsDialog(true);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to fetch donor details",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSendMessage = async () => {
+    if (!contactMessage.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter a message",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      await hospitalAPI.contactDonor(selectedDonor.id, contactMessage);
+      await whatsappAPI.sendMessage(selectedDonor.phone, contactMessage);
+      
+      toast({
+        title: "Message Sent",
+        description: `Message sent to ${selectedDonor.name} via WhatsApp`,
+      });
+      
+      setContactMessage('');
+      setShowContactDialog(false);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to send message",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -316,10 +380,22 @@ const HospitalDonors = () => {
               </div>
 
               <div className="pt-3 space-y-2">
-                <Button size="sm" className="w-full btn-medical">
+                <Button 
+                  size="sm" 
+                  className="w-full btn-medical"
+                  onClick={() => handleContactDonor(donor)}
+                >
+                  <MessageSquare className="h-4 w-4 mr-2" />
                   Contact Donor
                 </Button>
-                <Button size="sm" variant="outline" className="w-full">
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  className="w-full"
+                  onClick={() => handleViewDetails(donor)}
+                  disabled={isLoading}
+                >
+                  <Eye className="h-4 w-4 mr-2" />
                   View Details
                 </Button>
               </div>
@@ -336,6 +412,136 @@ const HospitalDonors = () => {
           </CardContent>
         </Card>
       )}
+
+      {/* Contact Donor Dialog */}
+      <Dialog open={showContactDialog} onOpenChange={setShowContactDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center space-x-2">
+              <MessageSquare className="h-5 w-5 text-primary" />
+              <span>Contact {selectedDonor?.name}</span>
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="message">Message to send via WhatsApp</Label>
+              <Textarea
+                id="message"
+                value={contactMessage}
+                onChange={(e) => setContactMessage(e.target.value)}
+                placeholder="Enter your message here..."
+                rows={4}
+              />
+            </div>
+            <div className="flex space-x-2">
+              <Button 
+                onClick={handleSendMessage} 
+                className="flex-1 btn-medical"
+                disabled={isLoading}
+              >
+                <MessageSquare className="h-4 w-4 mr-2" />
+                {isLoading ? 'Sending...' : 'Send via WhatsApp'}
+              </Button>
+              <Button variant="outline" onClick={() => setShowContactDialog(false)}>
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* View Details Dialog */}
+      <Dialog open={showDetailsDialog} onOpenChange={setShowDetailsDialog}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center space-x-2">
+              <Eye className="h-5 w-5 text-primary" />
+              <span>Donor Details - {selectedDonor?.name}</span>
+            </DialogTitle>
+          </DialogHeader>
+          {donorDetails && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-sm font-medium text-muted-foreground">Name</Label>
+                  <p className="text-sm">{donorDetails.name}</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-muted-foreground">Blood Type</Label>
+                  <p className="text-sm font-bold text-primary">{donorDetails.bloodType}</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-muted-foreground">Phone</Label>
+                  <p className="text-sm">{donorDetails.phone}</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-muted-foreground">Email</Label>
+                  <p className="text-sm">{donorDetails.email}</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-muted-foreground">Age</Label>
+                  <p className="text-sm">{donorDetails.age} years</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-muted-foreground">Weight</Label>
+                  <p className="text-sm">{donorDetails.weight} kg</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-muted-foreground">Height</Label>
+                  <p className="text-sm">{donorDetails.height} cm</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-muted-foreground">Last Donation</Label>
+                  <p className="text-sm">{donorDetails.lastDonation}</p>
+                </div>
+              </div>
+              
+              <div>
+                <Label className="text-sm font-medium text-muted-foreground">Address</Label>
+                <p className="text-sm">{donorDetails.address}</p>
+              </div>
+              
+              <div>
+                <Label className="text-sm font-medium text-muted-foreground">Medical History</Label>
+                <p className="text-sm">{donorDetails.medicalHistory}</p>
+              </div>
+              
+              <div>
+                <Label className="text-sm font-medium text-muted-foreground">Emergency Contact</Label>
+                <p className="text-sm">{donorDetails.emergencyContact}</p>
+              </div>
+              
+              <div className="flex items-center space-x-2">
+                <div className={`px-2 py-1 rounded-full text-xs flex items-center space-x-1 ${
+                  donorDetails.eligible 
+                    ? 'bg-success/10 text-success' 
+                    : 'bg-emergency/10 text-emergency'
+                }`}>
+                  {donorDetails.eligible ? (
+                    <CheckCircle className="h-3 w-3" />
+                  ) : (
+                    <XCircle className="h-3 w-3" />
+                  )}
+                  <span>{donorDetails.eligible ? 'Eligible' : 'Not Eligible'}</span>
+                </div>
+              </div>
+              
+              <div className="flex space-x-2 pt-4">
+                <Button 
+                  onClick={() => handleContactDonor(selectedDonor)}
+                  className="flex-1 btn-medical"
+                >
+                  <MessageSquare className="h-4 w-4 mr-2" />
+                  Contact Donor
+                </Button>
+                <Button variant="outline" onClick={() => setShowDetailsDialog(false)}>
+                  Close
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

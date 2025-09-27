@@ -1,6 +1,13 @@
+import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ChartBar as BarChart3, TrendingUp, Download, Calendar, Droplets, CircleCheck as CheckCircle, Circle as XCircle, Clock } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { bloodBankAPI } from '@/services/api';
 import {
   BarChart,
   Bar,
@@ -19,6 +26,43 @@ import {
 } from 'recharts';
 
 const BloodBankReports = () => {
+  const [showExportDialog, setShowExportDialog] = useState(false);
+  const [exportType, setExportType] = useState('inventory');
+  const [dateRange, setDateRange] = useState({
+    startDate: '',
+    endDate: ''
+  });
+  const [isExporting, setIsExporting] = useState(false);
+  const { toast } = useToast();
+
+  const handleExportReport = async () => {
+    if (!dateRange.startDate || !dateRange.endDate) {
+      toast({
+        title: "Error",
+        description: "Please select both start and end dates",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsExporting(true);
+    try {
+      await bloodBankAPI.exportReport(exportType, dateRange);
+      toast({
+        title: "Report Exported",
+        description: `${exportType} report has been exported successfully`,
+      });
+      setShowExportDialog(false);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to export report",
+        variant: "destructive",
+      });
+    } finally {
+      setIsExporting(false);
+    }
+  };
   const stockUsageData = [
     { month: 'Jan', used: 120, received: 145 },
     { month: 'Feb', used: 145, received: 130 },
@@ -61,10 +105,68 @@ const BloodBankReports = () => {
             <Calendar className="h-4 w-4 mr-2" />
             Date Range
           </Button>
-          <Button className="btn-medical">
-            <Download className="h-4 w-4 mr-2" />
-            Export Report
-          </Button>
+          <Dialog open={showExportDialog} onOpenChange={setShowExportDialog}>
+            <DialogTrigger asChild>
+              <Button className="btn-medical">
+                <Download className="h-4 w-4 mr-2" />
+                Export Report
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle>Export Report</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="exportType">Report Type</Label>
+                  <Select value={exportType} onValueChange={setExportType}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select report type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="inventory">Inventory Report</SelectItem>
+                      <SelectItem value="requests">Requests Report</SelectItem>
+                      <SelectItem value="donations">Donations Report</SelectItem>
+                      <SelectItem value="performance">Performance Report</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="startDate">Start Date</Label>
+                    <Input
+                      id="startDate"
+                      type="date"
+                      value={dateRange.startDate}
+                      onChange={(e) => setDateRange({...dateRange, startDate: e.target.value})}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="endDate">End Date</Label>
+                    <Input
+                      id="endDate"
+                      type="date"
+                      value={dateRange.endDate}
+                      onChange={(e) => setDateRange({...dateRange, endDate: e.target.value})}
+                    />
+                  </div>
+                </div>
+                <div className="flex space-x-2">
+                  <Button 
+                    onClick={handleExportReport} 
+                    className="flex-1 btn-medical"
+                    disabled={isExporting}
+                  >
+                    <Download className="h-4 w-4 mr-2" />
+                    {isExporting ? 'Exporting...' : 'Export Report'}
+                  </Button>
+                  <Button variant="outline" onClick={() => setShowExportDialog(false)}>
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
 

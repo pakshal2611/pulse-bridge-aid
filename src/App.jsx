@@ -29,6 +29,7 @@ import HospitalEmergency from "./pages/hospital/HospitalEmergency";
 import HospitalProfile from "./pages/hospital/HospitalProfile";
 
 // Blood Bank Pages
+import BloodBankDashboard from "./pages/bloodbank/BloodBankDashboard";
 import BloodBankInventory from "./pages/bloodbank/BloodBankInventory";
 import BloodBankRequests from "./pages/bloodbank/BloodBankRequests";
 import BloodBankEmergency from "./pages/bloodbank/BloodBankEmergency";
@@ -51,7 +52,7 @@ const DashboardRouter = () => {
   } else if (user?.role === 'hospital') {
     return <Dashboard />;
   } else if (user?.role === 'bloodbank') {
-    return <Dashboard />;
+    return <BloodBankDashboard />;
   } else if (user?.role === 'donor') {
     return <PatientDonorDashboard />;
   } else {
@@ -177,6 +178,13 @@ const App = () => (
               } />
 
               {/* Blood Bank Routes */}
+              <Route path="/bloodbank/dashboard" element={
+                <ProtectedRoute allowedRoles={['bloodbank']}>
+                  <Layout>
+                    <BloodBankDashboard />
+                  </Layout>
+                </ProtectedRoute>
+              } />
               <Route path="/bloodbank/inventory" element={
                 <ProtectedRoute allowedRoles={['bloodbank']}>
                   <Layout>

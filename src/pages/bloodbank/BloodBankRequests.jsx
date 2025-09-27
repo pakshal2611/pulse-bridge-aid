@@ -1,66 +1,43 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { FileText, Clock, CircleCheck as CheckCircle, Circle as XCircle, Building2, Calendar, Droplets, Filter } from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
+import { FileText, Clock, CircleCheck as CheckCircle, Circle as XCircle, Building2, Calendar, Droplets, Filter, MessageSquare, Eye } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { bloodBankAPI, whatsappAPI } from '@/services/api';
 
 const BloodBankRequests = () => {
-  const [requests, setRequests] = useState([
-    {
-      id: 1,
-      hospital: 'City General Hospital',
-      bloodType: 'O-',
-      unitsRequested: 5,
-      urgency: 'Critical',
-      requestDate: '2024-01-15',
-      status: 'Pending',
-      reason: 'Emergency surgery',
-      contactPerson: 'Dr. Smith',
-      phone: '+1234567890'
-    },
-    {
-      id: 2,
-      hospital: 'Metro Medical Center',
-      bloodType: 'A+',
-      unitsRequested: 3,
-      urgency: 'High',
-      requestDate: '2024-01-15',
-      status: 'Pending',
-      reason: 'Scheduled surgery',
-      contactPerson: 'Dr. Johnson',
-      phone: '+1234567891'
-    },
-    {
-      id: 3,
-      hospital: 'Regional Hospital',
-      bloodType: 'B+',
-      unitsRequested: 2,
-      urgency: 'Medium',
-      requestDate: '2024-01-14',
-      status: 'Approved',
-      reason: 'Patient treatment',
-      contactPerson: 'Dr. Davis',
-      phone: '+1234567892'
-    },
-    {
-      id: 4,
-      hospital: 'Central Medical',
-      bloodType: 'AB-',
-      unitsRequested: 8,
-      urgency: 'Low',
-      requestDate: '2024-01-14',
-      status: 'Rejected',
-      reason: 'Routine procedure',
-      contactPerson: 'Dr. Wilson',
-      phone: '+1234567893',
-      rejectionReason: 'Insufficient stock'
-    }
-  ]);
-
+  const [requests, setRequests] = useState([]);
   const [filterStatus, setFilterStatus] = useState('all');
+  const [showContactDialog, setShowContactDialog] = useState(false);
+  const [showDetailsDialog, setShowDetailsDialog] = useState(false);
+  const [selectedRequest, setSelectedRequest] = useState(null);
+  const [contactMessage, setContactMessage] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
+
+  useEffect(() => {
+    fetchRequests();
+  }, []);
+
+  const fetchRequests = async () => {
+    try {
+      const data = await bloodBankAPI.getRequests();
+      setRequests(data);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to fetch requests",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const filteredRequests = requests.filter(request => 
     filterStatus === 'all' || request.status.toLowerCase() === filterStatus
@@ -109,9 +86,57 @@ const BloodBankRequests = () => {
     });
   };
 
+  const handleContactHospital = async (request) => {
+    setSelectedRequest(request);
+    setShowContactDialog(true);
+  };
+
+  const handleViewDetails = (request) => {
+    setSelectedRequest(request);
+    setShowDetailsDialog(true);
+  };
+
+  const handleSendMessage = async () => {
+    if (!contactMessage.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter a message",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      await bloodBankAPI.contactHospital(selectedRequest.id, contactMessage);
+      await whatsappAPI.sendMessage(selectedRequest.phone, contactMessage);
+      
+      toast({
+        title: "Message Sent",
+        description: `Message sent to ${selectedRequest.hospital} via WhatsApp`,
+      });
+      
+      setContactMessage('');
+      setShowContactDialog(false);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to send message",
+        variant: "destructive",
+      });
+    }
+  };
+
   const pendingRequests = requests.filter(r => r.status === 'Pending').length;
   const approvedRequests = requests.filter(r => r.status === 'Approved').length;
   const rejectedRequests = requests.filter(r => r.status === 'Rejected').length;
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -250,10 +275,20 @@ const BloodBankRequests = () => {
                     </Button>
                   </>
                 )}
-                <Button size="sm" variant="outline">
+                <Button 
+                  size="sm" 
+                  variant="outline"
+                  onClick={() => handleContactHospital(request)}
+                >
+                  <MessageSquare className="h-4 w-4 mr-2" />
                   Contact Hospital
                 </Button>
-                <Button size="sm" variant="outline">
+                <Button 
+                  size="sm" 
+                  variant="outline"
+                  onClick={() => handleViewDetails(request)}
+                >
+                  <Eye className="h-4 w-4 mr-2" />
                   View Details
                 </Button>
               </div>
@@ -270,6 +305,124 @@ const BloodBankRequests = () => {
           </CardContent>
         </Card>
       )}
+
+      {/* Contact Hospital Dialog */}
+      <Dialog open={showContactDialog} onOpenChange={setShowContactDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center space-x-2">
+              <MessageSquare className="h-5 w-5 text-primary" />
+              <span>Contact {selectedRequest?.hospital}</span>
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="hospitalMessage">Message to send via WhatsApp</Label>
+              <Textarea
+                id="hospitalMessage"
+                value={contactMessage}
+                onChange={(e) => setContactMessage(e.target.value)}
+                placeholder="Enter your message here..."
+                rows={4}
+              />
+            </div>
+            <div className="flex space-x-2">
+              <Button 
+                onClick={handleSendMessage} 
+                className="flex-1 btn-medical"
+              >
+                <MessageSquare className="h-4 w-4 mr-2" />
+                Send via WhatsApp
+              </Button>
+              <Button variant="outline" onClick={() => setShowContactDialog(false)}>
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* View Details Dialog */}
+      <Dialog open={showDetailsDialog} onOpenChange={setShowDetailsDialog}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center space-x-2">
+              <Eye className="h-5 w-5 text-primary" />
+              <span>Request Details - {selectedRequest?.hospital}</span>
+            </DialogTitle>
+          </DialogHeader>
+          {selectedRequest && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-sm font-medium text-muted-foreground">Hospital</Label>
+                  <p className="text-sm">{selectedRequest.hospital}</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-muted-foreground">Blood Type</Label>
+                  <p className="text-sm font-bold text-primary">{selectedRequest.bloodType}</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-muted-foreground">Units Requested</Label>
+                  <p className="text-sm">{selectedRequest.unitsRequested}</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-muted-foreground">Urgency</Label>
+                  <Badge className={getUrgencyColor(selectedRequest.urgency)}>
+                    {selectedRequest.urgency}
+                  </Badge>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-muted-foreground">Request Date</Label>
+                  <p className="text-sm">{selectedRequest.requestDate}</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-muted-foreground">Status</Label>
+                  <Badge className={getStatusColor(selectedRequest.status)}>
+                    {selectedRequest.status}
+                  </Badge>
+                </div>
+              </div>
+              
+              <div>
+                <Label className="text-sm font-medium text-muted-foreground">Reason</Label>
+                <p className="text-sm">{selectedRequest.reason}</p>
+              </div>
+              
+              <div>
+                <Label className="text-sm font-medium text-muted-foreground">Contact Person</Label>
+                <p className="text-sm">{selectedRequest.contactPerson}</p>
+              </div>
+              
+              <div>
+                <Label className="text-sm font-medium text-muted-foreground">Phone</Label>
+                <p className="text-sm">{selectedRequest.phone}</p>
+              </div>
+              
+              {selectedRequest.rejectionReason && (
+                <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-3">
+                  <p className="text-sm text-destructive">
+                    <strong>Rejection Reason:</strong> {selectedRequest.rejectionReason}
+                  </p>
+                </div>
+              )}
+              
+              <div className="flex space-x-2 pt-4">
+                <Button 
+                  onClick={() => handleContactHospital(selectedRequest)}
+                  className="flex-1 btn-medical"
+                >
+                  <MessageSquare className="h-4 w-4 mr-2" />
+                  Contact Hospital
+                </Button>
+                <Button variant="outline" onClick={() => setShowDetailsDialog(false)}>
+                  Close
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

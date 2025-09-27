@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,18 +8,11 @@ import { Package, Plus, Minus, TriangleAlert as AlertTriangle, Droplets, CreditC
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { bloodBankAPI } from '@/services/api';
 
 const BloodBankInventory = () => {
-  const [inventory, setInventory] = useState([
-    { bloodType: 'A+', units: 45, minThreshold: 20, status: 'Good' },
-    { bloodType: 'A-', units: 12, minThreshold: 15, status: 'Low' },
-    { bloodType: 'B+', units: 38, minThreshold: 20, status: 'Good' },
-    { bloodType: 'B-', units: 8, minThreshold: 10, status: 'Critical' },
-    { bloodType: 'AB+', units: 25, minThreshold: 15, status: 'Good' },
-    { bloodType: 'AB-', units: 5, minThreshold: 8, status: 'Critical' },
-    { bloodType: 'O+', units: 69, minThreshold: 30, status: 'Good' },
-    { bloodType: 'O-', units: 18, minThreshold: 25, status: 'Low' }
-  ]);
+  const [inventory, setInventory] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   const [showUpdateDialog, setShowUpdateDialog] = useState(false);
   const [showAlertDialog, setShowAlertDialog] = useState(false);
@@ -34,6 +27,25 @@ const BloodBankInventory = () => {
     { id: 2, bloodType: 'A-', action: 'Removed', amount: 5, date: '2024-01-15 09:15', reason: 'Hospital request' },
     { id: 3, bloodType: 'B+', action: 'Added', amount: 8, date: '2024-01-14 16:45', reason: 'Blood drive' }
   ]);
+
+  useEffect(() => {
+    fetchInventory();
+  }, []);
+
+  const fetchInventory = async () => {
+    try {
+      const data = await bloodBankAPI.getInventory();
+      setInventory(data);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to fetch inventory data",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const getStatusColor = (status) => {
     switch (status.toLowerCase()) {
@@ -51,43 +63,59 @@ const BloodBankInventory = () => {
     }
   };
 
-  const handleUpdateInventory = () => {
+  const handleUpdateInventory = async () => {
     if (!selectedBloodType || !updateAmount) return;
 
     const amount = parseInt(updateAmount);
-    setInventory(prev => prev.map(item => {
-      if (item.bloodType === selectedBloodType.bloodType) {
-        const newUnits = updateType === 'add' 
-          ? item.units + amount 
-          : Math.max(0, item.units - amount);
-        
-        const newStatus = newUnits <= item.minThreshold * 0.5 ? 'Critical' :
-                         newUnits <= item.minThreshold ? 'Low' : 'Good';
-
-        // Add to log
-        const logEntry = {
-          id: Date.now(),
-          bloodType: item.bloodType,
-          action: updateType === 'add' ? 'Added' : 'Removed',
-          amount: amount,
-          date: new Date().toLocaleString(),
-          reason: updateType === 'add' ? 'Manual addition' : 'Manual removal'
-        };
-        setInventoryLog(prev => [logEntry, ...prev]);
-
-        return { ...item, units: newUnits, status: newStatus };
-      }
-      return item;
-    }));
-
-    setShowUpdateDialog(false);
-    setUpdateAmount('');
-    setSelectedBloodType(null);
     
-    toast({
-      title: "Inventory Updated",
-      description: `${updateType === 'add' ? 'Added' : 'Removed'} ${amount} units of ${selectedBloodType.bloodType}`,
-    });
+    try {
+      await bloodBankAPI.updateInventory(
+        selectedBloodType.bloodType, 
+        amount, 
+        updateType
+      );
+      
+      // Update local state
+      setInventory(prev => prev.map(item => {
+        if (item.bloodType === selectedBloodType.bloodType) {
+          const newUnits = updateType === 'add' 
+            ? item.units + amount 
+            : Math.max(0, item.units - amount);
+          
+          const newStatus = newUnits <= item.minThreshold * 0.5 ? 'Critical' :
+                           newUnits <= item.minThreshold ? 'Low' : 'Good';
+
+          return { ...item, units: newUnits, status: newStatus };
+        }
+        return item;
+      }));
+
+      // Add to log
+      const logEntry = {
+        id: Date.now(),
+        bloodType: selectedBloodType.bloodType,
+        action: updateType === 'add' ? 'Added' : 'Removed',
+        amount: amount,
+        date: new Date().toLocaleString(),
+        reason: updateType === 'add' ? 'Manual addition' : 'Manual removal'
+      };
+      setInventoryLog(prev => [logEntry, ...prev]);
+
+      setShowUpdateDialog(false);
+      setUpdateAmount('');
+      setSelectedBloodType(null);
+      
+      toast({
+        title: "Inventory Updated",
+        description: `${updateType === 'add' ? 'Added' : 'Removed'} ${amount} units of ${selectedBloodType.bloodType}`,
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update inventory",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleSetAlert = () => {
@@ -113,6 +141,14 @@ const BloodBankInventory = () => {
 
   const criticalItems = inventory.filter(item => item.status === 'Critical');
   const lowItems = inventory.filter(item => item.status === 'Low');
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

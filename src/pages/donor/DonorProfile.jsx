@@ -9,6 +9,7 @@ import { User, Mail, Phone, MapPin, Save, CreditCard as Edit, Heart, Droplets, C
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import NotificationSystem from '@/components/NotificationSystem';
 
 const DonorProfile = () => {
   const { user } = useAuth();
@@ -391,6 +392,13 @@ const DonorProfile = () => {
               <p className="text-sm text-muted-foreground">2+ years active</p>
             </div>
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Notifications */}
+      <Card className="card-medical">
+        <CardContent className="p-6">
+          <NotificationSystem />
         </CardContent>
       </Card>
     </div>

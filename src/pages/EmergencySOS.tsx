@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { emergencyAPI } from '@/services/api';
+import { emergencyAPI, whatsappAPI, aiMatchingAPI } from '@/services/api';
 import { 
   Siren, 
   Plus, 
@@ -13,7 +13,9 @@ import {
   AlertTriangle,
   Users,
   Send,
-  Navigation
+  Navigation,
+  Eye,
+  MessageSquare
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -33,6 +35,10 @@ export default function EmergencySOS() {
   const [requests, setRequests] = useState<EmergencyRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateRequest, setShowCreateRequest] = useState(false);
+  const [showMatches, setShowMatches] = useState(false);
+  const [selectedRequest, setSelectedRequest] = useState<EmergencyRequest | null>(null);
+  const [matches, setMatches] = useState<any[]>([]);
+  const [isNotifying, setIsNotifying] = useState(false);
   const { toast } = useToast();
 
   const [newRequest, setNewRequest] = useState({
@@ -92,17 +98,61 @@ export default function EmergencySOS() {
     }
   };
 
-  const handleNotifyDonors = async (requestId: number) => {
+  const handleNotifyDonors = async (request: EmergencyRequest) => {
+    setIsNotifying(true);
     try {
-      const result = await emergencyAPI.notifyDonors(requestId);
+      // First find matching donors
+      const matchingCriteria = {
+        bloodType: request.bloodType,
+        urgency: request.urgency,
+        location: request.hospital
+      };
+      
+      const matchResult = await aiMatchingAPI.findMatches(matchingCriteria);
+      const donorIds = matchResult.matches.map((match: any) => match.donorId);
+      
+      // Send emergency notification via WhatsApp
+      const emergencyData = {
+        patient: request.patient,
+        bloodType: request.bloodType,
+        hospital: request.hospital,
+        urgency: request.urgency,
+        timeLeft: request.timeLeft
+      };
+      
+      const result = await whatsappAPI.sendEmergencyNotification(donorIds, emergencyData);
+      
       toast({
-        title: "Donors Notified",
-        description: `${result.notified} donors have been notified about this emergency`,
+        title: "Emergency Alert Sent",
+        description: `${result.notified} donors have been notified via WhatsApp about this emergency`,
       });
     } catch (error) {
       toast({
         title: "Error",
         description: "Failed to notify donors",
+        variant: "destructive",
+      });
+    } finally {
+      setIsNotifying(false);
+    }
+  };
+
+  const handleViewMatches = async (request: EmergencyRequest) => {
+    try {
+      const matchingCriteria = {
+        bloodType: request.bloodType,
+        urgency: request.urgency,
+        location: request.hospital
+      };
+      
+      const matchResult = await aiMatchingAPI.findMatches(matchingCriteria);
+      setMatches(matchResult.matches);
+      setSelectedRequest(request);
+      setShowMatches(true);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to find matches",
         variant: "destructive",
       });
     }
@@ -306,13 +356,19 @@ export default function EmergencySOS() {
                 <Button 
                   size="sm" 
                   className="btn-emergency flex-1"
-                  onClick={() => handleNotifyDonors(request.id)}
+                  onClick={() => handleNotifyDonors(request)}
+                  disabled={isNotifying}
                 >
                   <Send className="h-4 w-4 mr-2" />
-                  Notify Donors
+                  {isNotifying ? 'Notifying...' : 'Notify Donors'}
                 </Button>
-                <Button size="sm" variant="outline" className="flex-1">
-                  <Users className="h-4 w-4 mr-2" />
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  className="flex-1"
+                  onClick={() => handleViewMatches(request)}
+                >
+                  <Eye className="h-4 w-4 mr-2" />
                   View Matches
                 </Button>
                 <Button size="sm" variant="outline">
@@ -337,6 +393,67 @@ export default function EmergencySOS() {
           </CardContent>
         </Card>
       )}
+
+      {/* Matches Dialog */}
+      <Dialog open={showMatches} onOpenChange={setShowMatches}>
+        <DialogContent className="sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center space-x-2">
+              <Users className="h-5 w-5 text-primary" />
+              <span>Donor Matches for {selectedRequest?.patient}</span>
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="grid gap-4">
+              {matches.map((match, index) => (
+                <Card key={index} className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-2">
+                      <h4 className="font-medium">Donor #{match.donorId}</h4>
+                      <div className="flex items-center space-x-4 text-sm text-muted-foreground">
+                        <span>Compatibility: {match.compatibility}%</span>
+                        <span>Distance: {match.distance} km</span>
+                        <span>Availability: {match.availability}</span>
+                      </div>
+                    </div>
+                    <div className="flex space-x-2">
+                      <Button size="sm" variant="outline">
+                        <MessageSquare className="h-4 w-4 mr-2" />
+                        Contact
+                      </Button>
+                      <Button size="sm" variant="outline">
+                        <Navigation className="h-4 w-4 mr-2" />
+                        Route
+                      </Button>
+                    </div>
+                  </div>
+                </Card>
+              ))}
+            </div>
+            
+            {matches.length === 0 && (
+              <div className="text-center py-8">
+                <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <p className="text-muted-foreground">No matching donors found for this emergency request.</p>
+              </div>
+            )}
+            
+            <div className="flex space-x-2 pt-4">
+              <Button 
+                onClick={() => selectedRequest && handleNotifyDonors(selectedRequest)}
+                className="flex-1 btn-emergency"
+                disabled={isNotifying}
+              >
+                <Send className="h-4 w-4 mr-2" />
+                {isNotifying ? 'Notifying...' : 'Notify All Matches'}
+              </Button>
+              <Button variant="outline" onClick={() => setShowMatches(false)}>
+                Close
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

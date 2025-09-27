@@ -1,13 +1,15 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Heart, Search, Calendar, MapPin, Phone, TriangleAlert as AlertTriangle, Clock, User, Bot, Plus, Trash2, CreditCard as Edit } from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
+import { Heart, Search, Calendar, MapPin, Phone, TriangleAlert as AlertTriangle, Clock, User, Bot, Plus, Trash2, CreditCard as Edit, MessageSquare, Eye, Save, X, Users } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
+import { hospitalAPI, whatsappAPI } from '@/services/api';
 
 const HospitalPatients = () => {
   const [patients, setPatients] = useState([
@@ -52,6 +54,12 @@ const HospitalPatients = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [showAddPatient, setShowAddPatient] = useState(false);
   const [editingPatient, setEditingPatient] = useState(null);
+  const [showContactFamily, setShowContactFamily] = useState(false);
+  const [showFamilyDetails, setShowFamilyDetails] = useState(false);
+  const [selectedPatient, setSelectedPatient] = useState(null);
+  const [familyData, setFamilyData] = useState(null);
+  const [contactMessage, setContactMessage] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
   const [newPatient, setNewPatient] = useState({
@@ -136,6 +144,110 @@ const HospitalPatients = () => {
     });
   };
 
+  const handleContactFamily = async (patient) => {
+    setSelectedPatient(patient);
+    setShowContactFamily(true);
+  };
+
+  const handleViewFamilyDetails = async (patient) => {
+    setIsLoading(true);
+    try {
+      const family = await hospitalAPI.getPatientFamily(patient.id);
+      setFamilyData(family);
+      setSelectedPatient(patient);
+      setShowFamilyDetails(true);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to fetch family details",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSendFamilyMessage = async () => {
+    if (!contactMessage.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter a message",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      await whatsappAPI.sendMessage(selectedPatient.familyContact, contactMessage);
+      
+      toast({
+        title: "Message Sent",
+        description: `Message sent to ${selectedPatient.name}'s family via WhatsApp`,
+      });
+      
+      setContactMessage('');
+      setShowContactFamily(false);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to send message",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleEditPatient = (patient) => {
+    setEditingPatient(patient);
+    setNewPatient({
+      name: patient.name,
+      disease: patient.disease,
+      bloodType: patient.bloodType,
+      urgency: patient.urgency,
+      familyContact: patient.familyContact,
+      familyEmail: patient.familyEmail
+    });
+    setShowAddPatient(true);
+  };
+
+  const handleUpdatePatient = async (e) => {
+    e.preventDefault();
+    try {
+      const updatedPatient = {
+        ...editingPatient,
+        ...newPatient
+      };
+      
+      setPatients(patients.map(patient => 
+        patient.id === editingPatient.id ? updatedPatient : patient
+      ));
+      
+      toast({
+        title: "Patient Updated",
+        description: "Patient information has been updated successfully",
+      });
+      
+      setEditingPatient(null);
+      setShowAddPatient(false);
+      setNewPatient({
+        name: '',
+        disease: '',
+        bloodType: '',
+        urgency: '',
+        familyContact: '',
+        familyEmail: ''
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update patient",
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -158,7 +270,7 @@ const HospitalPatients = () => {
             <DialogHeader>
               <DialogTitle>Add New Patient</DialogTitle>
             </DialogHeader>
-            <form onSubmit={handleAddPatient} className="space-y-4">
+            <form onSubmit={editingPatient ? handleUpdatePatient : handleAddPatient} className="space-y-4">
               <div>
                 <Label htmlFor="name">Patient Name</Label>
                 <Input
@@ -223,7 +335,9 @@ const HospitalPatients = () => {
                   required
                 />
               </div>
-              <Button type="submit" className="w-full btn-medical">Add Patient</Button>
+              <Button type="submit" className="w-full btn-medical">
+                {editingPatient ? 'Update Patient' : 'Add Patient'}
+              </Button>
             </form>
           </DialogContent>
         </Dialog>
@@ -316,9 +430,22 @@ const HospitalPatients = () => {
                   <Bot className="h-4 w-4 mr-2" />
                   Find AI Best Match
                 </Button>
-                <Button size="sm" variant="outline">
-                  <Phone className="h-4 w-4 mr-2" />
+                <Button 
+                  size="sm" 
+                  variant="outline"
+                  onClick={() => handleContactFamily(patient)}
+                >
+                  <MessageSquare className="h-4 w-4 mr-2" />
                   Contact Family
+                </Button>
+                <Button 
+                  size="sm" 
+                  variant="outline"
+                  onClick={() => handleViewFamilyDetails(patient)}
+                  disabled={isLoading}
+                >
+                  <Eye className="h-4 w-4 mr-2" />
+                  View Details
                 </Button>
                 <Select onValueChange={(value) => handleUpdateStatus(patient.id, value)}>
                   <SelectTrigger className="w-40">
@@ -332,7 +459,7 @@ const HospitalPatients = () => {
                 <Button 
                   size="sm" 
                   variant="outline"
-                  onClick={() => setEditingPatient(patient)}
+                  onClick={() => handleEditPatient(patient)}
                 >
                   <Edit className="h-4 w-4 mr-2" />
                   Edit
@@ -359,6 +486,106 @@ const HospitalPatients = () => {
           </CardContent>
         </Card>
       )}
+
+      {/* Contact Family Dialog */}
+      <Dialog open={showContactFamily} onOpenChange={setShowContactFamily}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center space-x-2">
+              <MessageSquare className="h-5 w-5 text-primary" />
+              <span>Contact {selectedPatient?.name}'s Family</span>
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="familyMessage">Message to send via WhatsApp</Label>
+              <Textarea
+                id="familyMessage"
+                value={contactMessage}
+                onChange={(e) => setContactMessage(e.target.value)}
+                placeholder="Enter your message here..."
+                rows={4}
+              />
+            </div>
+            <div className="flex space-x-2">
+              <Button 
+                onClick={handleSendFamilyMessage} 
+                className="flex-1 btn-medical"
+                disabled={isLoading}
+              >
+                <MessageSquare className="h-4 w-4 mr-2" />
+                {isLoading ? 'Sending...' : 'Send via WhatsApp'}
+              </Button>
+              <Button variant="outline" onClick={() => setShowContactFamily(false)}>
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Family Details Dialog */}
+      <Dialog open={showFamilyDetails} onOpenChange={setShowFamilyDetails}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center space-x-2">
+              <Users className="h-5 w-5 text-primary" />
+              <span>Family Details - {selectedPatient?.name}</span>
+            </DialogTitle>
+          </DialogHeader>
+          {familyData && (
+            <div className="space-y-4">
+              <div className="space-y-3">
+                {familyData.family.map((member, index) => (
+                  <Card key={member.id || index} className="p-4">
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <h4 className="font-medium">{member.name}</h4>
+                        {member.emergencyContact && (
+                          <Badge className="bg-emergency text-emergency-foreground">
+                            Emergency Contact
+                          </Badge>
+                        )}
+                      </div>
+                      <div className="grid grid-cols-2 gap-2 text-sm">
+                        <div>
+                          <Label className="text-xs text-muted-foreground">Relationship</Label>
+                          <p>{member.relationship}</p>
+                        </div>
+                        <div>
+                          <Label className="text-xs text-muted-foreground">Phone</Label>
+                          <p>{member.phone}</p>
+                        </div>
+                        <div>
+                          <Label className="text-xs text-muted-foreground">Email</Label>
+                          <p>{member.email}</p>
+                        </div>
+                        <div>
+                          <Label className="text-xs text-muted-foreground">Address</Label>
+                          <p className="text-xs">{member.address}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+              
+              <div className="flex space-x-2 pt-4">
+                <Button 
+                  onClick={() => handleContactFamily(selectedPatient)}
+                  className="flex-1 btn-medical"
+                >
+                  <MessageSquare className="h-4 w-4 mr-2" />
+                  Contact Family
+                </Button>
+                <Button variant="outline" onClick={() => setShowFamilyDetails(false)}>
+                  Close
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
+import { indiaDonationCenters } from '@/services/api';
 
 // Fix for default markers in react-leaflet
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -25,48 +26,8 @@ L.Icon.Default.mergeOptions({
 });
 
 const mockLocations = {
-  donor: { lat: 40.7128, lng: -74.0060, name: 'Your Location', address: 'New York, NY' },
-  hospitals: [
-    { 
-      id: 1, 
-      name: 'City General Hospital', 
-      lat: 40.7589, 
-      lng: -73.9851, 
-      address: '1234 Medical Ave, NY',
-      distance: '8.5 km',
-      duration: '15 min',
-      bloodBank: true,
-      urgencyLevel: 'High',
-      needsBloodType: 'O+',
-      acceptingDonors: true
-    },
-    { 
-      id: 2, 
-      name: 'Metro Blood Bank', 
-      lat: 40.6892, 
-      lng: -74.0445, 
-      address: '567 Blood St, Brooklyn',
-      distance: '12.3 km',
-      duration: '22 min',
-      bloodBank: true,
-      urgencyLevel: 'Medium',
-      needsBloodType: 'A+',
-      acceptingDonors: true
-    },
-    { 
-      id: 3, 
-      name: 'Regional Medical Center', 
-      lat: 40.7505, 
-      lng: -73.9934, 
-      address: '890 Care Blvd, Manhattan',
-      distance: '6.2 km',
-      duration: '12 min',
-      bloodBank: false,
-      urgencyLevel: 'Low',
-      needsBloodType: 'B-',
-      acceptingDonors: true
-    },
-  ]
+  donor: { lat: 28.6139, lng: 77.2090, name: 'Your Location', address: 'New Delhi, India' },
+  hospitals: indiaDonationCenters
 };
 
 interface DonorMapRouteProps {
@@ -104,7 +65,15 @@ export default function DonorMapRoute({ donorBloodType = 'O+' }: DonorMapRoutePr
   };
 
   const handleAcceptDonation = (hospital: any) => {
-    alert(`Donation request accepted for ${hospital.name}. You will receive WhatsApp directions shortly.`);
+    const message = `Hello! I'm interested in donating blood at ${hospital.name}. My blood type is ${donorBloodType}. Please provide directions and available time slots.`;
+    const whatsappUrl = `https://wa.me/${hospital.phone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(message)}`;
+    window.open(whatsappUrl, '_blank');
+  };
+
+  const handleContactHospital = (hospital: any) => {
+    const message = `Hello! I would like to know more about blood donation at ${hospital.name}. My blood type is ${donorBloodType}.`;
+    const whatsappUrl = `https://wa.me/${hospital.phone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(message)}`;
+    window.open(whatsappUrl, '_blank');
   };
 
   return (
@@ -276,6 +245,7 @@ export default function DonorMapRoute({ donorBloodType = 'O+' }: DonorMapRoutePr
                             size="sm" 
                             variant="outline" 
                             className="w-full"
+                            onClick={() => handleContactHospital(hospital)}
                           >
                             <Phone className="h-4 w-4 mr-1" />
                             Contact Hospital

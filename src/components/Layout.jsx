@@ -40,7 +40,7 @@ export default function Layout({ children }) {
       ];
     } else if (user?.role === 'bloodbank') {
       return [
-        ...baseItems,
+        { name: 'Dashboard', href: '/bloodbank/dashboard', icon: LayoutDashboard },
         { name: 'Inventory Management', href: '/bloodbank/inventory', icon: Package },
         { name: 'Requests', href: '/bloodbank/requests', icon: FileText },
         { name: 'Emergency SOS', href: '/bloodbank/emergency', icon: Siren },
